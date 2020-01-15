@@ -5,6 +5,7 @@ const SignupUser = require("./model");
 // var validate = require("validate.js");
 const checkPhoneNumber = require("../../validate/phoneNumber");
 const checkEmail = require("../../validate/email");
+const Joi = require("joi");
 
 // var constraints = {
 //   email: {
@@ -15,22 +16,39 @@ const checkEmail = require("../../validate/email");
 //   }
 // };
 
+const schema = Joi.object().keys({
+  email: Joi.string()
+    .regex(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/)
+    .email()
+    .required()
+});
+
 app.post("", (req, res, next) => {
-  let err = [];
-  const validateEmail = checkEmail(req.body.email);
-  const phoneNumber = checkPhoneNumber(req.body.mobileNumber);
-  if (phoneNumber) {
-    err.push(phoneNumber);
-  }
-  if (validateEmail) {
-    err.push(validateEmail);
-  }
-  if (err.length) {
+  const result = Joi.validate({ email: req.body.email }, schema);
+  if (result.error) {
     res.status(200).json({
-      msg: err
+      msg: "Please check your fields"
     });
     return;
   }
+  /////////////////////////////////// Custom Validation ///////////////////////////////////////
+  // let err = [];
+  // const validateEmail = checkEmail(req.body.email);
+  // const phoneNumber = checkPhoneNumber(req.body.mobileNumber);
+  // if (phoneNumber) {
+  //   err.push(phoneNumber);
+  // }
+  // if (validateEmail) {
+  //   err.push(validateEmail);
+  // }
+  // if (err.length) {
+  //   res.status(200).json({
+  //     msg: err
+  //   });
+  //   return;
+  // }
+
+  //////////////////////////////////////// Validator JS //////////////////////////////////////////
   // const validator = validate({ email: req.body.email }, constraints);
   // if (validator.email.length) {
   //   res.status(200).json({
@@ -38,6 +56,7 @@ app.post("", (req, res, next) => {
   //   });
   //   return;
   // }
+  return;
   SignupUser.count({ email: req.body.email }, (err, count) => {
     if (count === 0) {
       bcrypt.hash(req.body.password, 10, async (err, hash) => {
